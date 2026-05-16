@@ -1,5 +1,10 @@
 # scx
 
+[![npm version](https://img.shields.io/npm/v/@yamamuteki/scx.svg)](https://www.npmjs.com/package/@yamamuteki/scx)
+[![CI](https://github.com/yamamuteki/scx/actions/workflows/ci.yml/badge.svg)](https://github.com/yamamuteki/scx/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/node/v/@yamamuteki/scx.svg)](https://nodejs.org/)
+
 Simple Currency eXchanger for stdin streams.
 
 `scx` reads text from standard input, detects USD amounts such as `$12.34` or `$1,234.56`, converts them to a target currency at a given exchange rate, and writes the rewritten text to standard output.
@@ -61,6 +66,42 @@ Show it in Vietnamese dong:
 
 ```bash
 npx ccusage | scx -c VND -r 25400 -l vi-VN
+```
+
+### Claude Code statusline
+
+`scx` can be wired into the [Claude Code](https://claude.com/claude-code) statusline so the live cost figures from `ccusage statusline` are shown in your local currency. Add the following to `.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y ccusage statusline | npx -y @yamamuteki/scx -c JPY -r 155"
+  }
+}
+```
+
+The `-y` on each `npx` is important: the statusline is non-interactive, so any first-run install prompt would hang it.
+
+The resulting status line will look like:
+
+```
+🤖 Opus | 💰 N/A session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
+```
+
+For best startup performance, install both tools globally and use the bare names:
+
+```bash
+npm install -g ccusage @yamamuteki/scx
+```
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "ccusage statusline | scx -c JPY -r 155"
+  }
+}
 ```
 
 ## How it works
