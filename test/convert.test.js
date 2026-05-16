@@ -96,6 +96,23 @@ describe("locale and currency variations", () => {
   });
 });
 
+describe("currency-specific decimal places", () => {
+  test("JPY rounds to 0 decimal places", () => {
+    const { stdout } = runScx(["-c", "JPY", "-r", "1", "-l", "ja-JP"], "$10.49");
+    assert.match(stdout, /^￥10$/);
+  });
+
+  test("USD keeps 2 decimal places", () => {
+    const { stdout } = runScx(["-c", "USD", "-r", "1", "-l", "en-US"], "$10.49");
+    assert.equal(stdout, "$10.49");
+  });
+
+  test("KWD keeps 3 decimal places", () => {
+    const { stdout } = runScx(["-c", "KWD", "-r", "0.3", "-l", "en-US"], "$1");
+    assert.match(stdout, /0\.300/);
+  });
+});
+
 describe("rate edge cases", () => {
   test("very small rate works", () => {
     const { stdout, status } = runScx(
