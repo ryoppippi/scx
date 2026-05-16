@@ -1,5 +1,5 @@
-import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import { runScx } from "./helpers.js";
 
 function convertJPY(input, rate = "155") {
@@ -26,10 +26,7 @@ describe("USD pattern detection", () => {
   });
 
   test("rewrites every occurrence in a single line", () => {
-    assert.equal(
-      convertJPY("Today: $1.23 Total: $45.67"),
-      "Today: ￥191 Total: ￥7,079",
-    );
+    assert.equal(convertJPY("Today: $1.23 Total: $45.67"), "Today: ￥191 Total: ￥7,079");
   });
 
   test("preserves non-matching surrounding text and line breaks", () => {
@@ -94,29 +91,20 @@ describe("ANSI-colored input (ccusage compatibility)", () => {
 
 describe("locale and currency variations", () => {
   test("EUR + de-DE formats with comma decimal separator", () => {
-    const { stdout, status } = runScx(
-      ["-c", "EUR", "-r", "0.92", "-l", "de-DE"],
-      "Total: $12.34",
-    );
+    const { stdout, status } = runScx(["-c", "EUR", "-r", "0.92", "-l", "de-DE"], "Total: $12.34");
     assert.equal(status, 0);
     assert.match(stdout, /^Total: 11,35\s€$/u);
   });
 
   test("VND + vi-VN formats with dot thousands separator and dong sign", () => {
-    const { stdout, status } = runScx(
-      ["-c", "VND", "-r", "25400", "-l", "vi-VN"],
-      "Total: $12.34",
-    );
+    const { stdout, status } = runScx(["-c", "VND", "-r", "25400", "-l", "vi-VN"], "Total: $12.34");
     assert.equal(status, 0);
     assert.match(stdout, /313\.436/);
     assert.match(stdout, /₫/);
   });
 
   test("USD + en-US passes through with locale-appropriate formatting", () => {
-    const { stdout, status } = runScx(
-      ["-c", "USD", "-r", "1", "-l", "en-US"],
-      "Total: $1234.56",
-    );
+    const { stdout, status } = runScx(["-c", "USD", "-r", "1", "-l", "en-US"], "Total: $1234.56");
     assert.equal(status, 0);
     assert.equal(stdout, "Total: $1,234.56");
   });
@@ -141,19 +129,13 @@ describe("currency-specific decimal places", () => {
 
 describe("rate edge cases", () => {
   test("very small rate works", () => {
-    const { stdout, status } = runScx(
-      ["-c", "USD", "-r", "0.0001", "-l", "en-US"],
-      "$10000",
-    );
+    const { stdout, status } = runScx(["-c", "USD", "-r", "0.0001", "-l", "en-US"], "$10000");
     assert.equal(status, 0);
     assert.equal(stdout, "$1.00");
   });
 
   test("very large rate works", () => {
-    const { stdout, status } = runScx(
-      ["-c", "JPY", "-r", "1000000", "-l", "ja-JP"],
-      "$1",
-    );
+    const { stdout, status } = runScx(["-c", "JPY", "-r", "1000000", "-l", "ja-JP"], "$1");
     assert.equal(status, 0);
     assert.equal(stdout, "￥1,000,000");
   });
