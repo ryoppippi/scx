@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { Command } from "commander";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Command } from "commander";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,7 +29,10 @@ if (!Number.isFinite(rate) || rate <= 0) {
 }
 
 const currency = String(options.currency).toUpperCase();
-if (typeof Intl.supportedValuesOf === "function" && !Intl.supportedValuesOf("currency").includes(currency)) {
+if (
+  typeof Intl.supportedValuesOf === "function" &&
+  !Intl.supportedValuesOf("currency").includes(currency)
+) {
   process.stderr.write(`scx: invalid currency code: ${options.currency}\n`);
   process.exit(1);
 }
@@ -41,7 +44,9 @@ try {
     currency,
   });
 } catch (err) {
-  process.stderr.write(`scx: invalid currency or locale (${options.currency}, ${options.locale}): ${err.message}\n`);
+  process.stderr.write(
+    `scx: invalid currency or locale (${options.currency}, ${options.locale}): ${err.message}\n`,
+  );
   process.exit(1);
 }
 

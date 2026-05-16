@@ -1,8 +1,8 @@
-import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { runScx } from "./helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
