@@ -52,6 +52,32 @@ describe("USD pattern detection", () => {
   });
 });
 
+describe("boundary patterns", () => {
+  test("$0 converts to zero in the target currency", () => {
+    assert.equal(convertJPY("Total: $0"), "Total: ￥0");
+  });
+
+  test("$.5 (no leading digit) is not matched", () => {
+    assert.equal(convertJPY("Tip: $.5"), "Tip: $.5");
+  });
+
+  test("a bare $ at end of input is left unchanged", () => {
+    assert.equal(convertJPY("price tag $"), "price tag $");
+  });
+
+  test("$ followed by a space and digit is not matched", () => {
+    assert.equal(convertJPY("Total: $ 10"), "Total: $ 10");
+  });
+
+  test("consecutive $$10 keeps the first $ and converts the second amount", () => {
+    assert.equal(convertJPY("$$10"), "$￥1,550");
+  });
+
+  test("a hyphen prefix is preserved (no negative-amount handling)", () => {
+    assert.equal(convertJPY("Refund: -$10"), "Refund: -￥1,550");
+  });
+});
+
 describe("ANSI-colored input (ccusage compatibility)", () => {
   test("preserves ANSI escape sequences around converted amounts", () => {
     const input = "[36mTotal: $12.34[39m";
