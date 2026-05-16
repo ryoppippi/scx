@@ -16,12 +16,24 @@ describe("--version / --help", () => {
     assert.equal(stdout.trim(), pkg.version);
   });
 
+  test("-V is an alias for --version", () => {
+    const { stdout, status } = runScx(["-V"]);
+    assert.equal(status, 0);
+    assert.equal(stdout.trim(), pkg.version);
+  });
+
   test("--help mentions all options", () => {
     const { stdout, status } = runScx(["--help"]);
     assert.equal(status, 0);
     assert.match(stdout, /-c, --currency/);
     assert.match(stdout, /-r, --rate/);
     assert.match(stdout, /-l, --locale/);
+  });
+
+  test("-h is an alias for --help", () => {
+    const { stdout, status } = runScx(["-h"]);
+    assert.equal(status, 0);
+    assert.match(stdout, /Usage: scx/);
   });
 });
 
