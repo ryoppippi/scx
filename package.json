@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "start": "node bin/scx.js",
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test test/*.test.js",
     "lint": "biome ci",
     "format": "biome check --write"
   },
