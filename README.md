@@ -38,6 +38,9 @@ scx -c <currency> -r <rate> [-l <locale>]
 | `-c, --currency <code>` | ISO 4217 currency code to convert to (e.g. `JPY`, `EUR`, `VND`, `KRW`) | `JPY` |
 | `-r, --rate <number>` | Exchange rate from USD to the target currency. **Required.** | — |
 | `-l, --locale <locale>` | BCP 47 locale used by `Intl.NumberFormat` (e.g. `en-US`, `ja-JP`, `de-DE`, `vi-VN`) | `en-US` |
+| `--json` | Treat stdin as a JSON document and convert cost fields in place | off |
+| `--json-key <key>` | Extra key name(s) to treat as USD cost. Repeatable or comma-separated. | — |
+| `--json-cost-string` | In `--json` mode, replace cost numbers with formatted currency strings (e.g. `"¥2,973"`) instead of plain numbers | off |
 | `-h, --help` | Show help | — |
 | `-V, --version` | Show version | — |
 
@@ -66,6 +69,12 @@ Show it in Vietnamese dong:
 
 ```bash
 npx ccusage | scx -c VND -r 25400 -l vi-VN
+```
+
+Convert `ccusage --json` output, keeping cost values as numbers:
+
+```bash
+npx ccusage daily --json | scx -c JPY -r 155 --json
 ```
 
 ### Claude Code statusline
@@ -108,7 +117,49 @@ npm install -g ccusage @yamamuteki/scx
 
 `scx` matches the pattern `$<digits>` in the input — supporting forms like `$12`, `$12.34`, `$1,234.56`, and `$0.0012` — multiplies each detected amount by the rate, and formats the result with `Intl.NumberFormat(locale, { style: "currency", currency })`. Surrounding text is preserved as-is.
 
-Because matching requires a literal `$` prefix, inputs without one — for example `ccusage --json`, whose costs appear as bare numbers like `"totalCost": 19.18` — pass through unchanged.
+Because matching requires a literal `$` prefix, inputs without one — for example `ccusage --json`, whose costs appear as bare numbers like `"totalCost": 19.18` — pass through unchanged in the default text mode. Use `--json` (described below) to convert them.
+
+## JSON mode
+
+With `--json`, `scx` reads stdin as a single JSON document, walks it recursively, and rewrites the values of known USD cost keys. Other numeric fields (token counts, timestamps, ratios, etc.) are left untouched.
+
+```bash
+ccusage daily --json | scx -c JPY -r 155 --json
+```
+
+### Default cost keys
+
+The following keys are treated as USD by default — chosen to cover [`ccusage`](https://www.npmjs.com/package/ccusage)'s primary outputs out of the box:
+
+| Key | Source |
+|---|---|
+| `totalCost` | `daily` / `monthly` / `weekly` / `session` entries, their `totals`, and `blocks[].projection` |
+| `costUSD` | `blocks` entries |
+| `cost` | `modelBreakdowns` entries |
+| `costPerHour` | `blocks[].burnRate` |
+
+Add more keys with `--json-key`:
+
+```bash
+ccusage daily --json | scx -c JPY -r 155 --json --json-key myFee,extraCharge
+```
+
+### Output: number vs. string
+
+By default the converted value stays a JSON `number`, rounded to the target currency's natural decimal places (JPY → integer, USD → 2 digits, KWD → 3 digits, etc.). This keeps downstream tooling — dashboards, bots, `jq` — happy:
+
+```json
+{ "totalCost": 19.18 }     // input  (USD)
+{ "totalCost": 2973 }      // output (JPY, --json)
+```
+
+Pass `--json-cost-string` to get a human-readable currency-formatted string instead:
+
+```json
+{ "totalCost": "¥2,973" }  // output (--json --json-cost-string)
+```
+
+This is useful when piping into a viewer that displays the JSON as-is, but note that the value is no longer a `number` — code that expects `typeof x === "number"` will need to be updated.
 
 ## Requirements
 

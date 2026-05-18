@@ -9,6 +9,16 @@ const __dirname = dirname(__filename);
 const packageJsonPath = join(__dirname, "..", "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
+const DEFAULT_JSON_COST_KEYS = ["totalCost", "costUSD", "cost", "costPerHour"];
+
+function collectJsonKeys(value, previous) {
+  const additions = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return [...previous, ...additions];
+}
+
 const program = new Command();
 
 program
@@ -18,6 +28,18 @@ program
   .option("-c, --currency <code>", "target currency code", "JPY")
   .requiredOption("-r, --rate <number>", "exchange rate from USD to target currency")
   .option("-l, --locale <locale>", "locale for currency formatting", "en-US")
+  .option("--json", "treat stdin as JSON and convert cost fields recursively", false)
+  .option(
+    "--json-key <key>",
+    "add a cost key to the default set (repeatable, or comma-separated)",
+    collectJsonKeys,
+    [],
+  )
+  .option(
+    "--json-cost-string",
+    "in --json mode, replace cost numbers with formatted currency strings",
+    false,
+  )
   .addHelpText(
     "after",
     `
@@ -25,7 +47,8 @@ Examples:
   $ echo 'Total: $12.34' | scx -c JPY -r 155
   $ ccusage | scx -c JPY -r 155
   $ ccusage | scx -c EUR -r 0.92 -l de-DE
-  $ scx -c VND -r 25400 -l vi-VN < report.txt`,
+  $ ccusage daily --json | scx -c JPY -r 155 --json
+  $ ccusage daily --json | scx -c JPY -r 155 --json --json-cost-string`,
   )
   .parse(process.argv);
 
@@ -59,9 +82,16 @@ try {
   process.exit(1);
 }
 
+const fractionDigits = formatter.resolvedOptions().maximumFractionDigits;
+const roundingFactor = 10 ** fractionDigits;
+
+function roundCost(value) {
+  return Math.round(value * roundingFactor) / roundingFactor;
+}
+
 const usdPattern = /\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)/g;
 
-function convert(input) {
+function convertText(input) {
   return input.replace(usdPattern, (_match, amount) => {
     const usd = Number(amount.replace(/,/g, ""));
     if (!Number.isFinite(usd)) {
@@ -71,6 +101,39 @@ function convert(input) {
   });
 }
 
+function convertJson(input) {
+  let parsed;
+  try {
+    parsed = JSON.parse(input);
+  } catch (err) {
+    process.stderr.write(`scx: invalid JSON input: ${err.message}\n`);
+    process.exit(1);
+  }
+
+  const costKeys = new Set([...DEFAULT_JSON_COST_KEYS, ...options.jsonKey]);
+  const asString = Boolean(options.jsonCostString);
+
+  function transform(value, keyIsCost) {
+    if (Array.isArray(value)) {
+      return value.map((v) => transform(v, false));
+    }
+    if (value !== null && typeof value === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(value)) {
+        out[k] = transform(v, costKeys.has(k));
+      }
+      return out;
+    }
+    if (keyIsCost && typeof value === "number" && Number.isFinite(value)) {
+      const converted = value * rate;
+      return asString ? formatter.format(converted) : roundCost(converted);
+    }
+    return value;
+  }
+
+  return `${JSON.stringify(transform(parsed, false), null, 2)}\n`;
+}
+
 process.stdin.setEncoding("utf8");
 
 let buffer = "";
@@ -78,7 +141,8 @@ process.stdin.on("data", (chunk) => {
   buffer += chunk;
 });
 process.stdin.on("end", () => {
-  process.stdout.write(convert(buffer));
+  const output = options.json ? convertJson(buffer) : convertText(buffer);
+  process.stdout.write(output);
 });
 process.stdin.on("error", (err) => {
   process.stderr.write(`scx: stdin error: ${err.message}\n`);
