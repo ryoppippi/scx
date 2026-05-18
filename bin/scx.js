@@ -83,11 +83,14 @@ try {
   process.exit(1);
 }
 
-const fractionDigits = formatter.resolvedOptions().maximumFractionDigits;
-const roundingFactor = 10 ** fractionDigits;
-
 function roundCost(value) {
-  return Math.round(value * roundingFactor) / roundingFactor;
+  let digits = "";
+  for (const part of formatter.formatToParts(value)) {
+    if (part.type === "minusSign") digits += "-";
+    else if (part.type === "integer" || part.type === "fraction") digits += part.value;
+    else if (part.type === "decimal") digits += ".";
+  }
+  return Number(digits);
 }
 
 const usdPattern = /\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)/g;

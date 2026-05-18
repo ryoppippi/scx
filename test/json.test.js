@@ -120,6 +120,57 @@ describe("--json currency-specific rounding (numeric output)", () => {
   });
 });
 
+describe("--json floating point edge cases", () => {
+  test("USD: 1.005 rounds to 1.01 (not 1.00 from naive Math.round)", () => {
+    const { stdout } = runScx(
+      ["-c", "USD", "-r", "1", "-l", "en-US", "--json"],
+      JSON.stringify({ totalCost: 1.005 }),
+    );
+    const out = JSON.parse(stdout);
+    assert.equal(out.totalCost, 1.01);
+  });
+
+  test("USD: 19.185 rounds to 19.19", () => {
+    const { stdout } = runScx(
+      ["-c", "USD", "-r", "1", "-l", "en-US", "--json"],
+      JSON.stringify({ totalCost: 19.185 }),
+    );
+    const out = JSON.parse(stdout);
+    assert.equal(out.totalCost, 19.19);
+  });
+
+  test("USD: 0.1 + 0.2 accumulated error is normalized", () => {
+    const { stdout } = runScx(
+      ["-c", "USD", "-r", "1", "-l", "en-US", "--json"],
+      JSON.stringify({ totalCost: 0.1 + 0.2 }),
+    );
+    const out = JSON.parse(stdout);
+    assert.equal(out.totalCost, 0.3);
+  });
+
+  test("numeric and string modes round to the same value", () => {
+    const cases = [1.005, 19.185, 2.675, 0.1 + 0.2, 100.005];
+    for (const value of cases) {
+      const num = runScx(
+        ["-c", "USD", "-r", "1", "-l", "en-US", "--json"],
+        JSON.stringify({ totalCost: value }),
+      );
+      const str = runScx(
+        ["-c", "USD", "-r", "1", "-l", "en-US", "--json", "--json-cost-string"],
+        JSON.stringify({ totalCost: value }),
+      );
+      const numericOut = JSON.parse(num.stdout).totalCost;
+      const stringOut = JSON.parse(str.stdout).totalCost;
+      const stringDigits = stringOut.replace(/[^\d.-]/g, "");
+      assert.equal(
+        Number(stringDigits),
+        numericOut,
+        `mismatch for input ${value}: numeric=${numericOut} string=${stringOut}`,
+      );
+    }
+  });
+});
+
 describe("--json-cost-string (formatted string output)", () => {
   test("replaces cost numbers with formatted currency strings", () => {
     const { stdout, status } = runScx(
