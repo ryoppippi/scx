@@ -81,3 +81,28 @@ describe("argument validation", () => {
     assert.match(stdout, /¥155/);
   });
 });
+
+describe("TTY stdin guard", () => {
+  test("exits 1 with guidance when stdin is a TTY", () => {
+    const { status, stderr, stdout } = runScx(["-r", "155"], "", {
+      env: { SCX_FORCE_TTY: "1" },
+    });
+    assert.equal(status, 1);
+    assert.equal(stdout, "");
+    assert.match(stderr, /stdin is a terminal/i);
+    assert.match(stderr, /scx -c JPY -r 155/);
+    assert.match(stderr, /scx --help/);
+  });
+
+  test("does not trigger when stdin is piped (empty input is fine)", () => {
+    const { status, stderr } = runScx(["-r", "155"], "");
+    assert.equal(status, 0);
+    assert.equal(stderr, "");
+  });
+
+  test("does not trigger when stdin is piped (with content)", () => {
+    const { status, stdout } = runScx(["-r", "155"], "Total: $1.00");
+    assert.equal(status, 0);
+    assert.match(stdout, /¥155/);
+  });
+});

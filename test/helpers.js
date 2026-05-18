@@ -7,10 +7,11 @@ const __dirname = dirname(__filename);
 
 export const cliPath = join(__dirname, "..", "bin", "scx.js");
 
-export function runScx(args = [], stdin = "") {
+export function runScx(args = [], stdin = "", { env } = {}) {
   return spawnSync(process.execPath, [cliPath, ...args], {
     input: stdin,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
+    env: env ? { ...process.env, ...env } : process.env,
   });
 }
