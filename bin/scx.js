@@ -149,6 +149,14 @@ function looksLikeJson(input) {
   return input[i] === "{" || input[i] === "[";
 }
 
+// SCX_FORCE_TTY is a test-only escape hatch; not part of the public CLI.
+if (process.stdin.isTTY || process.env.SCX_FORCE_TTY === "1") {
+  process.stderr.write(
+    "scx: stdin is a terminal; pipe input from another command, e.g.\n  $ ccusage | scx -c JPY -r 155\nRun 'scx --help' for all options.\n",
+  );
+  process.exit(1);
+}
+
 process.stdin.setEncoding("utf8");
 
 let buffer = "";
