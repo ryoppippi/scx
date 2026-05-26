@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, test } from "node:test";
@@ -263,6 +263,76 @@ describe("scx config unset", () => {
   test("does not read stdin", () => {
     const xdg = makeXdgConfigHome({ currency: "JPY" });
     const { status } = runScx(["config", "unset", "locale"], "Total: $1.00", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.equal(status, 0);
+  });
+});
+
+describe("scx config delete", () => {
+  test("removes the existing XDG config file", () => {
+    const xdg = makeXdgConfigHome({ currency: "JPY", locale: "en-US" });
+    const path = join(xdg, "scx", "config.json");
+    assert.ok(existsSync(path));
+    const { status } = runScx(["config", "delete"], "", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.equal(status, 0);
+    assert.equal(existsSync(path), false);
+  });
+
+  test("is idempotent: no error when config does not exist", () => {
+    const xdg = makeEmptyXdg();
+    const { status, stderr } = runScx(["config", "delete"], "", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.equal(status, 0);
+    assert.doesNotMatch(stderr, /error/i);
+  });
+
+  test("prints 'deleted <path>' to stderr when a file was deleted", () => {
+    const xdg = makeXdgConfigHome({ currency: "JPY" });
+    const path = join(xdg, "scx", "config.json");
+    const { status, stderr } = runScx(["config", "delete"], "", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.equal(status, 0);
+    assert.match(stderr, /deleted/);
+    assert.ok(stderr.includes(path), `expected ${path} in stderr: ${stderr}`);
+  });
+
+  test("stays silent when nothing was deleted", () => {
+    const xdg = makeEmptyXdg();
+    const { stderr } = runScx(["config", "delete"], "", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.doesNotMatch(stderr, /deleted/);
+  });
+
+  test("respects $SCX_CONFIG", () => {
+    const dir = mkdtempSync(join(tmpdir(), "scx-test-cfg-"));
+    const path = join(dir, "config.json");
+    writeFileSync(path, JSON.stringify({ currency: "JPY" }));
+    const { status } = runScx(["config", "delete"], "", {
+      env: { SCX_CONFIG: path },
+    });
+    assert.equal(status, 0);
+    assert.equal(existsSync(path), false);
+  });
+
+  test("after delete, show falls back to defaults", () => {
+    const xdg = makeXdgConfigHome({ currency: "EUR", locale: "de-DE" });
+    runScx(["config", "delete"], "", { env: { XDG_CONFIG_HOME: xdg } });
+    const { stdout } = runScx(["config", "show"], "", {
+      env: { XDG_CONFIG_HOME: xdg },
+    });
+    assert.match(stdout, /currency.*JPY.*default/);
+    assert.match(stdout, /locale.*en-US.*default/);
+  });
+
+  test("does not read stdin", () => {
+    const xdg = makeXdgConfigHome({ currency: "JPY" });
+    const { status } = runScx(["config", "delete"], "Total: $1.00", {
       env: { XDG_CONFIG_HOME: xdg },
     });
     assert.equal(status, 0);

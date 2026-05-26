@@ -102,6 +102,7 @@ scx config set currency JPY         # write currency=JPY
 scx config set rate 155             # write rate.value=155, rate.currency from config, updatedAt=now
 scx config set locale en-US         # write locale=en-US
 scx config unset rate               # remove a key
+scx config delete                   # delete the config file entirely
 ```
 
 `scx config set rate <number>` stores `rate` as the structured `{ value, currency, updatedAt }` object using the already-configured `currency` (or the built-in default `JPY` when none is set). Values are validated before writing — `currency` must be a known ISO 4217 code, `rate` must be a positive number, and `locale` must be a recognized BCP 47 tag.
