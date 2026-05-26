@@ -104,7 +104,7 @@ scx config set locale en-US         # write locale=en-US
 scx config unset rate               # remove a key
 ```
 
-`scx config set rate <number>` requires `currency` to already be set; it stores `rate` as the structured `{ value, currency, updatedAt }` object so the cached value always knows which target currency it applies to. Values are validated before writing (currency must be a known ISO 4217 code, rate must be a positive number, locale must be a recognized BCP 47 tag).
+`scx config set rate <number>` stores `rate` as the structured `{ value, currency, updatedAt }` object using the already-configured `currency` (or the built-in default `JPY` when none is set). Values are validated before writing — `currency` must be a known ISO 4217 code, `rate` must be a positive number, and `locale` must be a recognized BCP 47 tag.
 
 ## Examples
 
