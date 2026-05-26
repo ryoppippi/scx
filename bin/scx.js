@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
@@ -18,6 +19,38 @@ function envOr(name) {
   return v == null || v === "" ? undefined : v;
 }
 
+function findConfigPath() {
+  const explicit = envOr("SCX_CONFIG");
+  if (explicit !== undefined) {
+    if (!existsSync(explicit)) {
+      process.stderr.write(`scx: config file not found: ${explicit}\n`);
+      process.exit(1);
+    }
+    return explicit;
+  }
+  const xdgHome = envOr("XDG_CONFIG_HOME") ?? join(homedir(), ".config");
+  const xdgPath = join(xdgHome, "scx", "config.json");
+  return existsSync(xdgPath) ? xdgPath : null;
+}
+
+function loadConfig() {
+  const path = findConfigPath();
+  if (!path) return null;
+  let raw;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    process.stderr.write(`scx: cannot read config (${path}): ${err.message}\n`);
+    process.exit(1);
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    process.stderr.write(`scx: invalid JSON in config (${path}): ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
 function collectJsonKeys(value, previous) {
   const additions = value
     .split(",")
@@ -34,12 +67,15 @@ program
   .version(packageJson.version)
   .option(
     "-c, --currency <code>",
-    `target currency code (default: ${DEFAULT_CURRENCY}, env: SCX_CURRENCY)`,
+    `target currency code (default: ${DEFAULT_CURRENCY}, env: SCX_CURRENCY, config: currency)`,
   )
-  .option("-r, --rate <number>", "exchange rate from USD to target currency (env: SCX_RATE)")
+  .option(
+    "-r, --rate <number>",
+    "exchange rate from USD to target currency (env: SCX_RATE, config: rate.value)",
+  )
   .option(
     "-l, --locale <locale>",
-    `locale for currency formatting (default: ${DEFAULT_LOCALE}, env: SCX_LOCALE)`,
+    `locale for currency formatting (default: ${DEFAULT_LOCALE}, env: SCX_LOCALE, config: locale)`,
   )
   .option("--json", "treat stdin as JSON and convert cost fields recursively", false)
   .option(
@@ -67,21 +103,11 @@ Examples:
   .parse(process.argv);
 
 const options = program.opts();
+const config = loadConfig();
 
-const rawRate = options.rate ?? envOr("SCX_RATE");
-const rawCurrency = options.currency ?? envOr("SCX_CURRENCY") ?? DEFAULT_CURRENCY;
-const rawLocale = options.locale ?? envOr("SCX_LOCALE") ?? DEFAULT_LOCALE;
-
-if (rawRate === undefined) {
-  process.stderr.write("scx: rate is required. Use -r <number> or set SCX_RATE.\n");
-  process.exit(1);
-}
-
-const rate = Number(rawRate);
-if (!Number.isFinite(rate) || rate <= 0) {
-  process.stderr.write(`scx: invalid rate: ${rawRate}\n`);
-  process.exit(1);
-}
+const rawCurrency =
+  options.currency ?? envOr("SCX_CURRENCY") ?? config?.currency ?? DEFAULT_CURRENCY;
+const rawLocale = options.locale ?? envOr("SCX_LOCALE") ?? config?.locale ?? DEFAULT_LOCALE;
 
 const currency = String(rawCurrency).toUpperCase();
 if (
@@ -89,6 +115,33 @@ if (
   !Intl.supportedValuesOf("currency").includes(currency)
 ) {
   process.stderr.write(`scx: invalid currency code: ${rawCurrency}\n`);
+  process.exit(1);
+}
+
+let rawRate = options.rate ?? envOr("SCX_RATE");
+let configRateMismatch = null;
+if (rawRate === undefined && config?.rate && typeof config.rate === "object") {
+  const configRateCurrency =
+    typeof config.rate.currency === "string" ? config.rate.currency.toUpperCase() : null;
+  if (configRateCurrency === currency && typeof config.rate.value === "number") {
+    rawRate = config.rate.value;
+  } else if (configRateCurrency && configRateCurrency !== currency) {
+    configRateMismatch = { configRateCurrency, currency };
+  }
+}
+
+if (rawRate === undefined) {
+  let msg = "scx: rate is required. Use -r <number>, set SCX_RATE, or add it to your config.\n";
+  if (configRateMismatch) {
+    msg += `  (config has a rate for ${configRateMismatch.configRateCurrency} but currency is ${configRateMismatch.currency})\n`;
+  }
+  process.stderr.write(msg);
+  process.exit(1);
+}
+
+const rate = Number(rawRate);
+if (!Number.isFinite(rate) || rate <= 0) {
+  process.stderr.write(`scx: invalid rate: ${rawRate}\n`);
   process.exit(1);
 }
 

@@ -36,7 +36,7 @@ scx -c <currency> -r <rate> [-l <locale>]
 | Option | Description | Default |
 |---|---|---|
 | `-c, --currency <code>` | ISO 4217 currency code to convert to (e.g. `JPY`, `EUR`, `VND`, `KRW`) | `JPY` |
-| `-r, --rate <number>` | Exchange rate from USD to the target currency. Required unless `SCX_RATE` is set. | — |
+| `-r, --rate <number>` | Exchange rate from USD to the target currency. Required unless `SCX_RATE` or the config file supplies one. | — |
 | `-l, --locale <locale>` | BCP 47 locale used by `Intl.NumberFormat` (e.g. `en-US`, `ja-JP`, `de-DE`, `vi-VN`) | `en-US` |
 | `--json` | Treat stdin as a JSON document and convert cost fields in place. Parse errors exit with status 1 | off |
 | `--json-key <key>` | Extra key name(s) to treat as USD cost. Repeatable or comma-separated. | — |
@@ -54,11 +54,44 @@ The three core options can also be supplied through environment variables. CLI f
 | `SCX_CURRENCY` | `-c, --currency` | Target currency code. |
 | `SCX_RATE` | `-r, --rate` | Exchange rate from USD to the target currency. |
 | `SCX_LOCALE` | `-l, --locale` | BCP 47 locale for number formatting. |
+| `SCX_CONFIG` | — | Absolute path to a config file. Overrides the default XDG lookup. |
 
 ```bash
 export SCX_CURRENCY=JPY SCX_RATE=155
 ccusage | scx
 ```
+
+## Config file
+
+`scx` can read persistent settings from a JSON config file, so you don't have to repeat `-r`, `-c`, etc. on every invocation. Resolution order from highest to lowest precedence is: **CLI flags > environment variables > config file > built-in defaults**.
+
+### Location
+
+The first file that exists in this order is used:
+
+1. `$SCX_CONFIG` (when set)
+2. `$XDG_CONFIG_HOME/scx/config.json`
+3. `~/.config/scx/config.json`
+
+If `$SCX_CONFIG` points at a missing or unreadable file, `scx` exits with status 1 instead of silently falling back — explicit paths are treated as load-bearing.
+
+If no config file exists at any of the default locations, `scx` simply runs with built-in defaults and any CLI/env values supplied.
+
+### Schema
+
+```json
+{
+  "currency": "JPY",
+  "locale": "en-US",
+  "rate": {
+    "value": 155.23,
+    "currency": "JPY",
+    "updatedAt": "2026-05-26T08:00:00Z"
+  }
+}
+```
+
+All fields are optional. `rate.currency` records the target currency the rate corresponds to. If you override the effective currency (via `-c` or `SCX_CURRENCY`) to something other than `rate.currency`, the stored rate is treated as not applicable and you must supply a fresh `-r` / `SCX_RATE` for that currency. The rate-missing error names both currencies so the mismatch is easy to spot.
 
 ## Examples
 
