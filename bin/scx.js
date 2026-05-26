@@ -111,20 +111,41 @@ program
     "in --json mode, replace cost numbers with formatted currency strings",
     false,
   )
-  .option("--no-auto-json", "disable JSON input auto-detection (default: on)")
+  .option("--no-auto-json", "disable JSON input auto-detection")
   .addHelpText(
     "after",
     `
 Examples:
-  $ echo 'Total: $12.34' | scx -c JPY -r 155
-  $ ccusage | scx -c JPY -r 155
-  $ ccusage | scx -c EUR -r 0.92 -l de-DE
-  $ ccusage daily --json | scx -c JPY -r 155              # JSON auto-detected
-  $ ccusage daily --json | scx -c JPY -r 155 --json-cost-string`,
+  $ scx config update                              # one-time setup
+  $ scx config show                                # see your settings
+  $ echo 'Total: $1.00' | scx                      # quick test
+  $ ccusage | scx                                  # main use case (uses config)
+  $ ccusage | scx -c EUR -r 0.92 -l de-DE          # ad-hoc with all flags
+  $ ccusage daily --json | scx                     # JSON mode (auto-detected)
+  $ ccusage daily --json | scx --json-cost-string  # JSON, costs as formatted strings`,
   )
   .action(runConvert);
 
-const configCmd = program.command("config").description("Manage the scx config file");
+const configCmd = program
+  .command("config")
+  .description("Manage the scx config file")
+  .addHelpText(
+    "after",
+    `
+Examples:
+  $ scx config update                # fetch USD->JPY (or your config currency)
+  $ scx config update -c EUR         # fetch USD->EUR (makes EUR the default currency)
+  $ scx config show                  # see current settings + source
+  $ scx config set currency JPY      # write a key
+  $ scx config set rate 155          # write rate manually (no network)
+  $ scx config unset rate            # remove a key
+  $ scx config delete                # remove the entire config file`,
+  );
+
+configCmd
+  .command("update")
+  .description("Fetch the latest USD->target rate from frankfurter.dev")
+  .action(runConfigUpdate);
 
 configCmd
   .command("show")
@@ -147,13 +168,6 @@ configCmd
   .action(runConfigUnset);
 
 configCmd.command("delete").description("Delete the config file entirely").action(runConfigDelete);
-
-configCmd
-  .command("update")
-  .description(
-    "Fetch the latest rate from frankfurter.dev and write it to the config (use -c <code> or SCX_CURRENCY to override the target)",
-  )
-  .action(runConfigUpdate);
 
 await program.parseAsync(process.argv);
 
@@ -184,9 +198,14 @@ function runConvert() {
   }
 
   if (rawRate === undefined) {
-    let msg = "scx: rate is required. Use -r <number>, set SCX_RATE, or add it to your config.\n";
+    let msg;
     if (configRateMismatch) {
-      msg += `  (config has a rate for ${configRateMismatch.configRateCurrency} but currency is ${configRateMismatch.currency})\n`;
+      msg = `scx: rate is required. Config has a rate for ${configRateMismatch.configRateCurrency} but currency is ${configRateMismatch.currency}. To refresh:\n  $ scx config update -c ${configRateMismatch.currency}\n`;
+    } else {
+      msg =
+        "scx: rate is required. Run one of:\n" +
+        "  $ scx config update         # fetch USD->JPY from frankfurter.dev\n" +
+        "  $ scx config update -c EUR  # or any other currency\n";
     }
     process.stderr.write(msg);
     process.exit(1);
@@ -280,7 +299,21 @@ function runConvert() {
   // SCX_FORCE_TTY is a test-only escape hatch; not part of the public CLI.
   if (process.stdin.isTTY || process.env.SCX_FORCE_TTY === "1") {
     process.stderr.write(
-      "scx: stdin is a terminal; pipe input from another command, e.g.\n  $ ccusage | scx -c JPY -r 155\nRun 'scx --help' for all options.\n",
+      [
+        "scx: stdin is a terminal. scx reads USD amounts from a pipe and converts them.",
+        "",
+        "First-time setup (one command):",
+        "  $ scx config update         # fetch USD->JPY (default)",
+        "  $ scx config update -c EUR  # or any other currency",
+        "",
+        "Then pipe input:",
+        "  $ echo 'Total: $1.00' | scx",
+        "  $ ccusage | scx",
+        "  $ ccusage | scx -c JPY -r 155        # one-shot (no setup needed)",
+        "",
+        "Run 'scx --help' for all commands.",
+        "",
+      ].join("\n"),
     );
     process.exit(1);
   }
