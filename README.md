@@ -20,16 +20,31 @@ npm install -g @yamamuteki/scx
 Or run it on demand with `npx`:
 
 ```bash
-npx @yamamuteki/scx -c JPY -r 155
+echo 'Total: $1.00' | npx @yamamuteki/scx -c JPY -r 155
 ```
 
 ## Usage
 
+`scx` reads USD amounts from a pipe and converts them to your local currency.
+
+First-time setup (one command):
+
 ```bash
-scx -c <currency> -r <rate> [-l <locale>]
+scx config update         # fetch USD->JPY (default)
+scx config update -c EUR  # or any other currency
 ```
 
-`scx` reads from `stdin`, detects USD amounts, and writes the converted text to `stdout`.
+This fetches the rate from [Frankfurter](https://frankfurter.dev/); subsequent invocations need no flags.
+
+Then pipe input:
+
+```bash
+echo 'Total: $1.00' | scx
+ccusage | scx
+ccusage | scx -c JPY -r 155        # one-shot (no setup needed)
+```
+
+Run `scx --help` for all commands.
 
 ## Options
 
@@ -96,11 +111,13 @@ All fields are optional. `rate.currency` records the target currency the rate co
 ### Managing the config file
 
 ```bash
+scx config update                   # fetch the latest rate (see "Fetching the rate automatically")
+scx config update -c EUR            # fetch for a different currency (and switch to it)
 scx config show                     # show resolved settings with their source
 scx config path                     # print the config file path
-scx config set currency JPY         # write currency=JPY
-scx config set rate 155             # write rate.value=155, rate.currency from config, updatedAt=now
-scx config set locale en-US         # write locale=en-US
+scx config set currency JPY         # write a key
+scx config set rate 155             # write rate manually (no network)
+scx config set locale en-US         # write a key
 scx config unset rate               # remove a key
 scx config delete                   # delete the config file entirely
 ```
@@ -110,48 +127,54 @@ scx config delete                   # delete the config file entirely
 ### Fetching the rate automatically
 
 ```bash
-scx config update                   # fetch USD->JPY (current currency) from frankfurter.dev
-scx config update -c EUR            # fetch USD->EUR; also updates config.currency to EUR
+scx config update                   # fetch USD->JPY (or your config currency) from frankfurter.dev
+scx config update -c EUR            # fetch USD->EUR (also makes EUR the default currency)
 ```
 
-The rate comes from [Frankfurter](https://frankfurter.dev/), a free public API that tracks European Central Bank reference rates. No API key needed. The fetched value is written to the config exactly the same shape as `scx config set rate <number>`, with `updatedAt` reflecting when the fetch happened. Network failures, HTTP errors, and timeouts (5 s) exit with status 1; the stale config is left untouched. Override the target currency with `-c <code>` or `SCX_CURRENCY`.
+The rate comes from [Frankfurter](https://frankfurter.dev/), a free public API that tracks European Central Bank reference rates. No API key needed. The fetched value is written to the config in exactly the same shape as `scx config set rate <number>`, with `updatedAt` reflecting when the fetch happened. Network failures, HTTP errors, and timeouts (5 s) exit with status 1; the stale config is left untouched. Override the target currency with `-c <code>` or `SCX_CURRENCY`.
 
 ## Examples
 
 Convert a piped string:
 
 ```bash
-echo 'Today: $1.23 Total: $45.67' | scx -c JPY -r 155
+echo 'Today: $1.23 Total: $45.67' | npx @yamamuteki/scx -c JPY -r 155
 # => Today: ¥191 Total: ¥7,079
 ```
 
-Show `ccusage` output in Japanese yen:
+Typing `-c JPY -r 155` on every invocation gets old. Run `npx @yamamuteki/scx config update -c JPY` once, and the same conversion becomes:
 
 ```bash
-npx ccusage | npx @yamamuteki/scx -c JPY -r 155
+echo 'Today: $1.23 Total: $45.67' | npx @yamamuteki/scx
+# => Today: ¥191 Total: ¥7,079
 ```
 
-Show it in euros with German formatting:
+The following examples run with `scx config update`.
+
+Show `ccusage` output:
 
 ```bash
-npx ccusage | scx -c EUR -r 0.92 -l de-DE
+npx ccusage | npx @yamamuteki/scx
 ```
 
-Show it in Vietnamese dong:
+Override the currency or locale for a single run:
 
 ```bash
-npx ccusage | scx -c VND -r 25400 -l vi-VN
+npx ccusage | npx @yamamuteki/scx -c EUR -r 0.92 -l de-DE   # euros with German formatting
+npx ccusage | npx @yamamuteki/scx -c VND -r 25400 -l vi-VN  # Vietnamese dong
 ```
 
 Convert `ccusage --json` output (JSON is auto-detected; cost values stay as numbers):
 
 ```bash
-npx ccusage daily --json | scx -c JPY -r 155
+npx ccusage daily --json | npx @yamamuteki/scx
 ```
 
 ### Claude Code statusline
 
-`scx` can be wired into the [Claude Code](https://claude.com/claude-code) statusline so the live cost figures from `ccusage statusline` are shown in your local currency. Add the following to `.claude/settings.json`:
+`scx` can be wired into the [Claude Code](https://claude.com/claude-code) statusline so the live cost figures from `ccusage statusline` are shown in your local currency.
+
+The most direct approach is to hard-code the rate in `.claude/settings.json`:
 
 ```json
 {
@@ -161,6 +184,19 @@ npx ccusage daily --json | scx -c JPY -r 155
   }
 }
 ```
+
+But the rate moves daily, and editing `.claude/settings.json` every time you want a fresh rate is annoying. Use `scx config update` instead — it keeps the rate in scx's own config:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y ccusage statusline | npx -y @yamamuteki/scx"
+  }
+}
+```
+
+Now refreshing is one command (`scx config update`), and `settings.json` stays untouched.
 
 The `-y` on each `npx` is important: the statusline is non-interactive, so any first-run install prompt would hang it.
 
@@ -180,7 +216,7 @@ npm install -g ccusage @yamamuteki/scx
 {
   "statusLine": {
     "type": "command",
-    "command": "ccusage statusline | scx -c JPY -r 155"
+    "command": "ccusage statusline | scx"
   }
 }
 ```
