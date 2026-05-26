@@ -93,6 +93,19 @@ If no config file exists at any of the default locations, `scx` simply runs with
 
 All fields are optional. `rate.currency` records the target currency the rate corresponds to. If you override the effective currency (via `-c` or `SCX_CURRENCY`) to something other than `rate.currency`, the stored rate is treated as not applicable and you must supply a fresh `-r` / `SCX_RATE` for that currency. The rate-missing error names both currencies so the mismatch is easy to spot.
 
+### Managing the config file
+
+```bash
+scx config show                     # show resolved settings with their source
+scx config path                     # print the config file path
+scx config set currency JPY         # write currency=JPY
+scx config set rate 155             # write rate.value=155, rate.currency from config, updatedAt=now
+scx config set locale en-US         # write locale=en-US
+scx config unset rate               # remove a key
+```
+
+`scx config set rate <number>` requires `currency` to already be set; it stores `rate` as the structured `{ value, currency, updatedAt }` object so the cached value always knows which target currency it applies to. Values are validated before writing (currency must be a known ISO 4217 code, rate must be a positive number, locale must be a recognized BCP 47 tag).
+
 ## Examples
 
 Convert a piped string:
