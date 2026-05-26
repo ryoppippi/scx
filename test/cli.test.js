@@ -92,7 +92,9 @@ describe("TTY stdin guard", () => {
     assert.equal(status, 1);
     assert.equal(stdout, "");
     assert.match(stderr, /stdin is a terminal/i);
-    assert.match(stderr, /scx -c JPY -r 155/);
+    assert.match(stderr, /scx config update/);
+    assert.match(stderr, /-c EUR/);
+    assert.match(stderr, /ccusage \| scx/);
     assert.match(stderr, /scx --help/);
   });
 

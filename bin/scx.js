@@ -184,9 +184,14 @@ function runConvert() {
   }
 
   if (rawRate === undefined) {
-    let msg = "scx: rate is required. Use -r <number>, set SCX_RATE, or add it to your config.\n";
+    let msg;
     if (configRateMismatch) {
-      msg += `  (config has a rate for ${configRateMismatch.configRateCurrency} but currency is ${configRateMismatch.currency})\n`;
+      msg = `scx: rate is required. Config has a rate for ${configRateMismatch.configRateCurrency} but currency is ${configRateMismatch.currency}. To refresh:\n  $ scx config update -c ${configRateMismatch.currency}\n`;
+    } else {
+      msg =
+        "scx: rate is required. Run one of:\n" +
+        "  $ scx config update         # fetch USD->JPY from frankfurter.dev\n" +
+        "  $ scx config update -c EUR  # or any other currency\n";
     }
     process.stderr.write(msg);
     process.exit(1);
@@ -280,7 +285,21 @@ function runConvert() {
   // SCX_FORCE_TTY is a test-only escape hatch; not part of the public CLI.
   if (process.stdin.isTTY || process.env.SCX_FORCE_TTY === "1") {
     process.stderr.write(
-      "scx: stdin is a terminal; pipe input from another command, e.g.\n  $ ccusage | scx -c JPY -r 155\nRun 'scx --help' for all options.\n",
+      [
+        "scx: stdin is a terminal. scx reads USD amounts from a pipe and converts them.",
+        "",
+        "First-time setup (one command):",
+        "  $ scx config update         # fetch USD->JPY (default)",
+        "  $ scx config update -c EUR  # or any other currency",
+        "",
+        "Then pipe input:",
+        "  $ echo 'Total: $1.00' | scx",
+        "  $ ccusage | scx",
+        "  $ ccusage | scx -c JPY -r 155        # one-shot (no setup needed)",
+        "",
+        "Run 'scx --help' for all commands.",
+        "",
+      ].join("\n"),
     );
     process.exit(1);
   }
