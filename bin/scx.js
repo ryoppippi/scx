@@ -111,7 +111,7 @@ program
     "in --json mode, replace cost numbers with formatted currency strings",
     false,
   )
-  .option("--no-auto-json", "disable JSON input auto-detection (default: on)")
+  .option("--no-auto-json", "disable JSON input auto-detection")
   .addHelpText(
     "after",
     `
