@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -145,6 +145,8 @@ configCmd
   .command("unset <key>")
   .description(`Remove a config value (keys: ${VALID_SET_CONFIG_KEYS.join(", ")})`)
   .action(runConfigUnset);
+
+configCmd.command("delete").description("Delete the config file entirely").action(runConfigDelete);
 
 configCmd
   .command("update")
@@ -408,6 +410,18 @@ function runConfigUnset(key) {
   const config = loadConfig() ?? {};
   delete config[key];
   writeConfig(config);
+}
+
+function runConfigDelete() {
+  const path = configPathForWrite();
+  try {
+    unlinkSync(path);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    process.stderr.write(`scx: failed to delete config (${path}): ${err.message}\n`);
+    process.exit(1);
+  }
+  process.stderr.write(`scx: deleted ${path}\n`);
 }
 
 async function fetchRate(currency) {
