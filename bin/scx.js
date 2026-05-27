@@ -562,7 +562,9 @@ async function runConfigUpdate(_options, command) {
     );
     process.exit(1);
   }
-  const value = await fetchRate(currency);
+  // USD is the base currency, so USD->USD is always 1 and the API has no such
+  // pair (/v2/rate/USD/USD returns 404). Set it directly instead of fetching.
+  const value = currency === "USD" ? 1 : await fetchRate(currency);
   config.currency = currency;
   config.rate = {
     value,

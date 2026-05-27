@@ -259,6 +259,19 @@ describe("scx config update", () => {
     }
   });
 
+  test("-c USD sets rate 1 without hitting the network", async () => {
+    const xdg = makeEmptyXdg();
+    const { status, stdout } = await runScxAsync(["config", "update", "-c", "USD"], "", {
+      env: { XDG_CONFIG_HOME: xdg, SCX_RATE_FETCH_URL: "http://127.0.0.1:1" },
+    });
+    assert.equal(status, 0);
+    assert.match(stdout, /^1\s*$/);
+    const cfg = readXdgConfig(xdg);
+    assert.equal(cfg.currency, "USD");
+    assert.equal(cfg.rate.value, 1);
+    assert.equal(cfg.rate.currency, "USD");
+  });
+
   test("config update list prints codes and names from /v2/currencies", async () => {
     let requestUrl = "";
     const { srv, url } = await startServer((req, res) => {

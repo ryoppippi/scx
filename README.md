@@ -142,6 +142,8 @@ The rate comes from [Frankfurter](https://frankfurter.dev/), a free public API t
 
 If a currency isn't served, `config update` exits with an error — supply the rate yourself with `-c <code> -r <number>` per run, or `scx config set currency <code>` then `scx config set rate <number>`.
 
+`USD` is a special case: it's the base currency, so `scx config update -c USD` (or with USD configured) sets `rate 1` without any network call — letting you keep `scx` in a USD pipeline (e.g. the statusline) unchanged.
+
 ## Examples
 
 Convert a piped string:
