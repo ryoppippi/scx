@@ -459,7 +459,7 @@ function runConfigDelete() {
 
 async function fetchRate(currency) {
   const base = envOr("SCX_RATE_FETCH_URL") ?? RATE_FETCH_BASE;
-  const url = `${base}/v1/latest?base=USD&symbols=${encodeURIComponent(currency)}`;
+  const url = `${base}/v2/rate/USD/${encodeURIComponent(currency)}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), RATE_FETCH_TIMEOUT_MS);
   let response;
@@ -485,7 +485,7 @@ async function fetchRate(currency) {
     process.stderr.write(`scx: invalid JSON from rate API: ${err.message}\n`);
     process.exit(1);
   }
-  const value = body?.rates?.[currency];
+  const value = body?.rate;
   if (typeof value !== "number") {
     process.stderr.write(`scx: rate for ${currency} missing from response\n`);
     process.exit(1);
