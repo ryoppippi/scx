@@ -135,6 +135,7 @@ const configCmd = program
 Examples:
   $ scx config update                # fetch USD->JPY (or your config currency)
   $ scx config update -c EUR         # fetch USD->EUR (makes EUR the default currency)
+  $ scx config update list           # list the currencies config update can fetch
   $ scx config show                  # see current settings + source
   $ scx config set currency JPY      # write a key
   $ scx config set rate 155          # write rate manually (no network)
