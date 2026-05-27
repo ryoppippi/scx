@@ -113,6 +113,7 @@ All fields are optional. `rate.currency` records the target currency the rate co
 ```bash
 scx config update                   # fetch the latest rate (see "Automatic rate update")
 scx config update -c EUR            # fetch for a different currency (and switch to it)
+scx config update list              # list the currencies config update can fetch
 scx config show                     # show resolved settings with their source
 scx config path                     # print the config file path
 scx config set currency JPY         # write a key
@@ -137,7 +138,7 @@ The rate comes from [Frankfurter](https://frankfurter.dev/), a free public API t
 
 #### Auto-updatable currencies
 
-`scx config update` works for any currency Frankfurter serves — most ISO 4217 codes (`JPY`, `EUR`, `GBP`, `VND`, `KWD`, … ~170 in total). For the complete, authoritative list see [`api.frankfurter.dev/v2/currencies`](https://api.frankfurter.dev/v2/currencies) (JSON).
+`scx config update` works for any currency Frankfurter serves — most ISO 4217 codes (`JPY`, `EUR`, `GBP`, `VND`, `KWD`, … ~170 in total). Run `scx config update list` to print them all as `CODE  Name`, or browse the raw list at [`api.frankfurter.dev/v2/currencies`](https://api.frankfurter.dev/v2/currencies) (JSON).
 
 If a currency isn't served, `config update` exits with an error — supply the rate yourself with `-c <code> -r <number>` per run, or `scx config set currency <code>` then `scx config set rate <number>`.
 
