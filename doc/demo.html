@@ -389,7 +389,7 @@ async function scene_intro() {
   await sleep(150);
   await typeInto(
     p,
-    'echo "SCX is Simple Currency eXchanger for stdin streams."',
+    'echo "SCX is Simple Currency eXchanger for stdin streams." > /dev/null',
     30
   );
   setCursor(p, false);
@@ -411,24 +411,24 @@ async function scene_outro() {
       '<span class="accent">$1</span>'
     );
     row(formatted, "fade-in");
-    await sleep(25);
+    await sleep(20);
   }
   await sleep(500);
 
   const p2 = promptLine();
   await sleep(100);
-  await typeInto(p2, 'echo "May your rates be ever in your favor! :)"', 30);
+  await typeInto(p2, 'echo "May your rates be ever in your favor! :)" > /dev/null', 30);
   setCursor(p2, false);
-  await sleep(600);
+  await sleep(300);
 
   const p3 = promptLine();
   await sleep(100);
   await typeInto(p3, "open https://github.com/yamamuteki/scx", 30);
-  // 1.8s loop-boundary breather. CDP screencast skips frames when nothing
+  // 2.5s loop-boundary breather. CDP screencast skips frames when nothing
   // visibly changes, so nudge the cursor by 1px each tick to force frames
   // (imperceptible visually, but enough for the recorder to capture).
   const cursor = p3.querySelector(".cursor");
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 25; i++) {
     if (cursor) cursor.style.marginLeft = i % 2 === 0 ? "1px" : "2px";
     await sleep(100);
   }
