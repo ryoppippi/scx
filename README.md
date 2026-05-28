@@ -40,13 +40,13 @@ It also works in your [Claude Code](https://claude.com/claude-code) statusline v
 **Before**: `{ "statusLine": { "type": "command", "command": "npx -y ccusage statusline" } }`
 
 ```
-🤖 Opus | 💰 N/A session / $8.14 today / $8.14 block (3h 21m left) | 🔥 $9.84/hr | 🧠 N/A
+🤖 Opus | 💰 $5.00 session / $8.14 today / $8.14 block (3h 21m left) | 🔥 $9.84/hr | 🧠 N/A
 ```
 
 **After**: `{ "statusLine": { "type": "command", "command": "npx -y ccusage statusline | npx -y @yamamuteki/scx -c JPY -r 155" } }`
 
 ```
-🤖 Opus | 💰 N/A session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
+🤖 Opus | 💰 ¥775 session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
 ```
 
 ## Installation
@@ -252,7 +252,7 @@ The `-y` on each `npx` is important: the statusline is non-interactive, so any f
 The resulting status line will look like:
 
 ```
-🤖 Opus | 💰 N/A session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
+🤖 Opus | 💰 ¥775 session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
 ```
 
 For best startup performance, install both tools globally and use the bare names:
