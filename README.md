@@ -13,44 +13,6 @@ It is designed to wrap tools like [`ccusage`](https://www.npmjs.com/package/ccus
 
 <img src="doc/demo.gif" alt="scx demo" width="800">
 
-**Before** — `npx ccusage`:
-
-```
-┌────────────┬─────┬────────────┐
-│ Date       │ ... │ Cost (USD) │
-├────────────┼─────┼────────────┤
-│ 2026-05-28 │ ... │     $30.00 │
-├────────────┼─────┼────────────┤
-│ Total      │ ... │     $30.00 │
-└────────────┴─────┴────────────┘
-```
-
-**After** — `npx ccusage | npx -y @yamamuteki/scx -c JPY -r 155`:
-
-```
-┌────────────┬─────┬────────────┐
-│ Date       │ ... │ Cost (USD) │
-├────────────┼─────┼────────────┤
-│ 2026-05-28 │ ... │     ¥4,650 │
-├────────────┼─────┼────────────┤
-│ Total      │ ... │     ¥4,650 │
-└────────────┴─────┴────────────┘
-```
-
-It also works in your [Claude Code](https://claude.com/claude-code) statusline via `.claude/settings.json`.
-
-**Before**: `{ "statusLine": { "type": "command", "command": "npx -y ccusage statusline" } }`
-
-```
-🤖 Opus | 💰 $5.00 session / $8.14 today / $8.14 block (3h 21m left) | 🔥 $9.84/hr | 🧠 N/A
-```
-
-**After**: `{ "statusLine": { "type": "command", "command": "npx -y ccusage statusline | npx -y @yamamuteki/scx -c JPY -r 155" } }`
-
-```
-🤖 Opus | 💰 ¥775 session / ¥1,262 today / ¥1,262 block (3h 21m left) | 🔥 ¥1,525/hr | 🧠 N/A
-```
-
 ## Installation
 
 ```bash
