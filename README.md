@@ -146,6 +146,12 @@ If a currency isn't served, `config update` exits with an error — supply the r
 
 `USD` is a special case: it's the base currency, so `scx config update -c USD` (or with USD configured) sets `rate 1` without any network call — letting you keep `scx` in a USD pipeline (e.g. the statusline) unchanged.
 
+## How it works
+
+`scx` matches the pattern `$<digits>` in the input — supporting forms like `$12`, `$12.34`, `$1,234.56`, and `$0.0012` — multiplies each detected amount by the rate, and formats the result with `Intl.NumberFormat(locale, { style: "currency", currency })`. Surrounding text is preserved as-is.
+
+Because matching requires a literal `$` prefix, inputs without one — for example `ccusage --json`, whose costs appear as bare numbers like `"totalCost": 19.18` — pass through unchanged in the default text mode. Use `--json` (described below) to convert them.
+
 ## Examples
 
 Convert a piped string:
@@ -183,7 +189,7 @@ Convert `ccusage --json` output (JSON is auto-detected; cost values stay as numb
 npx ccusage daily --json | npx @yamamuteki/scx
 ```
 
-### Claude Code statusline
+## Claude Code statusline
 
 `scx` can be wired into the [Claude Code](https://claude.com/claude-code) statusline so the live cost figures from `ccusage statusline` are shown in your local currency.
 
@@ -233,12 +239,6 @@ npm install -g ccusage @yamamuteki/scx
   }
 }
 ```
-
-## How it works
-
-`scx` matches the pattern `$<digits>` in the input — supporting forms like `$12`, `$12.34`, `$1,234.56`, and `$0.0012` — multiplies each detected amount by the rate, and formats the result with `Intl.NumberFormat(locale, { style: "currency", currency })`. Surrounding text is preserved as-is.
-
-Because matching requires a literal `$` prefix, inputs without one — for example `ccusage --json`, whose costs appear as bare numbers like `"totalCost": 19.18` — pass through unchanged in the default text mode. Use `--json` (described below) to convert them.
 
 ## JSON mode
 
