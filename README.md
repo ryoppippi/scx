@@ -64,7 +64,7 @@ Run `scx --help` for all commands.
 
 ## Environment variables
 
-The three core options can also be supplied through environment variables. CLI flags take precedence.
+The three core options can also be supplied through environment variables, plus `SCX_CONFIG` for the config file path. CLI flags take precedence.
 
 | Variable | Equivalent option | Description |
 |---|---|---|
@@ -99,12 +99,12 @@ If no config file exists at any of the default locations, `scx` simply runs with
 ```json
 {
   "currency": "JPY",
-  "locale": "en-US",
   "rate": {
     "value": 155.23,
     "currency": "JPY",
     "updatedAt": "2026-05-26T08:00:00Z"
-  }
+  },
+  "locale": "en-US"
 }
 ```
 
